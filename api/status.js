@@ -1,0 +1,1 @@
+module.exports=(req,res)=>{res.setHeader('Cache-Control','no-store');res.statusCode=200;res.setHeader('Content-Type','application/json');res.end(JSON.stringify({enabled:process.env.AI_ENABLED==='true',configured:!!(process.env.GEMINI_API_KEY&&process.env.GEMINI_MODEL&&process.env.APP_ACCESS_TOKEN?.length>=32)}));};

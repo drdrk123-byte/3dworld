@@ -1,0 +1,1 @@
+{"name":"drawing-walk","version":"0.2.0","private":true,"description":"그림 산책: 3D 월드 편집과 탐험","scripts":{"start":"node server.cjs","dev":"node server.cjs","build":"node scripts/check.cjs","test":"node --test tests/*.test.cjs"},"engines":{"node":"22.x"}}
