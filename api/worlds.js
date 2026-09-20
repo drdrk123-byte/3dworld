@@ -1,12 +1,13 @@
-const {sanitizeWorld,authorized,createStore,isId,MAX_WORLDS}=require('../lib/worlds.cjs');
-function createHandler({env=process.env,fetchImpl=fetch}={}){return async(req,res)=>{
+const {sanitizeWorld,createAuth,createStore,isId,MAX_WORLDS}=require('../lib/worlds.cjs');
+function createHandler({env=process.env,fetchImpl=fetch}={}){
+ const store=createStore(env,fetchImpl),authorized=createAuth(env,fetchImpl);
+ return async(req,res)=>{
  const send=(code,body)=>{res.statusCode=code;res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','application/json; charset=utf-8');res.end(JSON.stringify(body));};
- const store=createStore(env,fetchImpl);
  if(!store)return send(503,{error:'서버 저장소가 연결되지 않았습니다.'});
  try{
   if(req.method==='GET')return send(200,{worlds:await store.list()});
   if(req.method!=='POST'&&req.method!=='DELETE')return send(405,{error:'지원하지 않는 요청입니다.'});
-  if(!authorized(req,env))return send(401,{error:'교사용 연결 암호를 확인해 주세요.'});
+  if(!await authorized(req))return send(401,{error:'Google 로그인이 필요하거나 허용된 교사 계정이 아닙니다.'});
   if(req.method==='DELETE'){
    const id=new URL(req.url,'http://localhost').searchParams.get('id');
    if(!isId(id))return send(400,{error:'월드 번호가 올바르지 않습니다.'});

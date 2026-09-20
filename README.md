@@ -33,12 +33,24 @@ Vercel 프로젝트의 Settings → Environment Variables에 다음 값을 등�
 
 그림 업로드 → AI 초안 만들기 → **그림 전송·이번 호출 승인** → 분석 결과 확인 → 초안 적용 순서입니다. 적용 전에는 기존 월드를 유지하며, 적용 후에는 실행 취소할 수 있습니다.
 
-## 학생용 월드 목록 저장소 (선택, 권장)
+## 학생용 월드 목록 저장소 (Firebase Firestore + Google 로그인)
 
-교사용 탭의 **학생용 게시 목록**에서 월드를 게시하면 학생 탭 목록에 바로 나타나게 하려면 서버 저장소가 필요합니다. Vercel 프로젝트의 **Storage** 탭 → Marketplace에서 **Upstash for Redis**(무료 요금제 확인)를 만들어 프로젝트에 연결하면 `KV_REST_API_URL`, `KV_REST_API_TOKEN` 환경변수가 자동으로 추가됩니다(`UPSTASH_REDIS_REST_URL/TOKEN` 이름도 지원). 연결 후 재배포하세요.
+교사용 탭의 **학생용 게시 목록**에서 월드를 게시하면 학생 탭에 바로 나타나게 하려면 아래를 한 번 설정합니다. 설정하지 않으면 `public/worlds.json` 파일 방식으로 동작합니다.
 
-- 목록 조회는 누구나, 게시·삭제는 `APP_ACCESS_TOKEN`(교사용 연결 암호)이 있어야 합니다. 월드는 최대 30개입니다.
-- 저장소가 없으면 `public/worlds.json` 파일 방식으로 동작합니다(내려받은 파일을 덮어쓰고 GitHub에 push).
+1. [Firebase 콘솔](https://console.firebase.google.com)에서 프로젝트를 만들고 **Firestore Database**를 생성합니다. 규칙은 기본(모두 거부)을 그대로 두세요. 서버가 서비스 계정으로만 접근합니다.
+2. 프로젝트 설정 → **서비스 계정** → **새 비공개 키 생성**으로 JSON을 받습니다. 이 파일은 비밀입니다. GitHub에 올리지 마세요.
+3. [Google Cloud 콘솔](https://console.cloud.google.com) → API 및 서비스 → 사용자 인증 정보 → **OAuth 클라이언트 ID(웹 애플리케이션)**를 만들고 승인된 JavaScript 원본에 배포 주소(예: `https://3dworld-theta.vercel.app`)를 추가합니다. OAuth 동의 화면이 테스트 상태면 교사 이메일을 테스트 사용자로 추가하세요.
+4. Vercel 환경변수에 등록하고 재배포합니다.
+
+| 이름 | 값 |
+|---|---|
+| `FIREBASE_PROJECT_ID` | JSON의 `project_id` |
+| `FIREBASE_CLIENT_EMAIL` | JSON의 `client_email` |
+| `FIREBASE_PRIVATE_KEY` | JSON의 `private_key` 전체 |
+| `GOOGLE_CLIENT_ID` | 3단계의 클라이언트 ID |
+| `TEACHER_EMAILS` | 게시를 허용할 교사 Google 이메일(쉼표로 여러 개 가능) |
+
+목록 조회는 누구나, 게시·삭제는 `TEACHER_EMAILS`의 Google 계정으로 로그인했을 때만 가능합니다(서버가 Google 토큰을 검증). 월드는 최대 30개입니다. AI 초안 만들기는 계속 `APP_ACCESS_TOKEN`을 사용합니다.
 
 ## 과금과 현재 한계
 
