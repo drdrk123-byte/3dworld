@@ -1,7 +1,13 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');const {normalize,parseImage,generate}=require('../lib/ai.cjs');const {createHandler}=require('../api/generate.js');
 const object={kind:'house',label:'집',color:'#aabbcc',x:1,y:0,z:1,rotation:0,scale:1};
 test('AI output is normalized without extra code',()=>{const w=normalize({title:'마을',objects:[{...object,x:100,script:'bad'}]});assert.equal(w.objects[0].x,15);assert.equal(w.objects[0].script,undefined);assert.ok(w.objects[0].id);});
-test('invalid AI objects rejected',()=>{for(const o of [{...object,kind:'script'},{...object,color:'javascript:x'},{...object,x:NaN}])assert.throws(()=>normalize({title:'x',objects:[o]}));});
+test('unsafe AI values are sanitized or dropped, never passed through',()=>{
+ const w=normalize({title:'x',objects:[{...object,kind:'script'},{...object,color:'javascript:x'},{...object,color:'#abc'},{...object,x:NaN}]});
+ assert.equal(w.objects.length,3);assert.equal(w.objects[0].kind,'box');assert.match(w.objects[1].color,/^#[0-9a-f]{6}$/);assert.equal(w.objects[2].color,'#aabbcc');
+ assert.throws(()=>normalize({title:'x',objects:[{...object,x:NaN}]}));assert.throws(()=>normalize({title:'x',objects:'nope'}));});
+test('new kinds are accepted; walk-through kinds are not solid; missing optional fields get defaults',()=>{
+ const w=normalize({title:'x',inventory:['a'],objects:[{kind:'pond',color:'#3399ff',x:1,z:2},{kind:'mountain',label:'산',color:'#778899',x:0,z:-14,y:0,rotation:0,scale:9},{kind:'cloud',color:'#ffffff',x:3,z:3,y:8}]});
+ assert.equal(w.objects[0].solid,false);assert.equal(w.objects[0].scale,1);assert.equal(w.objects[1].solid,true);assert.equal(w.objects[1].scale,2.5);assert.equal(w.objects[2].solid,false);assert.equal(w.inventory,undefined);});
 test('non-images rejected',()=>assert.throws(()=>parseImage('data:image/png;base64,aGVsbG8=')));
 function invoke(handler,body,authorization=''){return new Promise(resolve=>handler({method:'POST',headers:{'content-type':'application/json',authorization},body},{setHeader(){},end(body){resolve({code:this.statusCode,body:JSON.parse(body)});}}));}
 test('disabled AI cannot call provider',async()=>{let calls=0;const r=await invoke(createHandler({env:{},generateImpl:()=>calls++}),{});assert.equal(r.code,403);assert.equal(calls,0);});
