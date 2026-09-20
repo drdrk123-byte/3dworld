@@ -4,21 +4,21 @@ const {publicKey,privateKey}=crypto.generateKeyPairSync('rsa',{modulusLength:204
 const jwk={...publicKey.export({format:'jwk'}),kid:'k1',alg:'RS256',use:'sig'};
 const pem=privateKey.export({type:'pkcs8',format:'pem'});
 const CLIENT='client-id.apps.googleusercontent.com';
-const env={GOOGLE_CLIENT_ID:CLIENT,TEACHER_EMAILS:'Teacher@Example.com',FIREBASE_PROJECT_ID:'proj',FIREBASE_CLIENT_EMAIL:'sa@proj.iam.gserviceaccount.com',FIREBASE_PRIVATE_KEY:pem.replace(/\n/g,'\\n')};
+const env={GOOGLE_CLIENT_ID:CLIENT,TEACHER_EMAILS:'Teacher@Example.com',FIREBASE_PROJECT_ID:'proj',FIREBASE_DATABASE_ID:'threedworld',FIREBASE_CLIENT_EMAIL:'sa@proj.iam.gserviceaccount.com',FIREBASE_PRIVATE_KEY:pem.replace(/\n/g,'\\n')};
 function idToken(over={}){const b=v=>Buffer.from(JSON.stringify(v)).toString('base64url');
  const h=b({alg:'RS256',kid:'k1',typ:'JWT'}),p=b({iss:'https://accounts.google.com',aud:CLIENT,exp:Math.floor(Date.now()/1000)+600,email:'teacher@example.com',email_verified:true,...over});
  return h+'.'+p+'.'+crypto.sign('RSA-SHA256',Buffer.from(h+'.'+p),privateKey).toString('base64url');}
-function fakeGoogle(){const docs=new Map();const P='https://firestore.googleapis.com/v1/projects/proj/databases/(default)/documents/worlds';
+function fakeGoogle(){const docs=new Map();const P='https://firestore.googleapis.com/v1/projects/proj/databases/threedworld/documents/worlds';
  const res=(status,body)=>({ok:status<300,status,json:async()=>body});
  const fetchImpl=async(url,init={})=>{url=String(url);
   if(url==='https://oauth2.googleapis.com/token')return res(200,{access_token:'at',expires_in:3600});
   if(url==='https://www.googleapis.com/oauth2/v3/certs')return res(200,{keys:[jwk]});
   assert.equal(init.headers.Authorization,'Bearer at');
-  if(url.startsWith(P+'?'))return res(200,docs.size?{documents:[...docs].map(([id,f])=>({name:`projects/proj/databases/(default)/documents/worlds/${id}`,fields:f}))}:{});
+  if(url.startsWith(P+'?'))return res(200,docs.size?{documents:[...docs].map(([id,f])=>({name:`projects/proj/databases/threedworld/documents/worlds/${id}`,fields:f}))}:{});
   if(url.startsWith(P+'/')){const id=decodeURIComponent(url.slice(P.length+1));
    if(init.method==='PATCH'){docs.set(id,JSON.parse(init.body).fields);return res(200,{});}
    if(init.method==='DELETE'){docs.delete(id);return res(200,{});}
-   return docs.has(id)?res(200,{name:`projects/proj/databases/(default)/documents/worlds/${id}`,fields:docs.get(id)}):res(404,{});}
+   return docs.has(id)?res(200,{name:`projects/proj/databases/threedworld/documents/worlds/${id}`,fields:docs.get(id)}):res(404,{});}
   throw Error('unexpected '+url);};
  return {docs,fetchImpl};}
 async function call(handler,{method='GET',url='/api/worlds',token,body}={}){

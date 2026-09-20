@@ -45,6 +45,7 @@ Vercel 프로젝트의 Settings → Environment Variables에 다음 값을 등�
 | 이름 | 값 |
 |---|---|
 | `FIREBASE_PROJECT_ID` | JSON의 `project_id` |
+| `FIREBASE_DATABASE_ID` | Firestore 데이터베이스 이름(기본 데이터베이스면 비워 둠) |
 | `FIREBASE_CLIENT_EMAIL` | JSON의 `client_email` |
 | `FIREBASE_PRIVATE_KEY` | JSON의 `private_key` 전체 |
 | `GOOGLE_CLIENT_ID` | 3단계의 클라이언트 ID |
