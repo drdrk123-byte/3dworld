@@ -57,3 +57,14 @@ test('list is capped at 30 worlds',async()=>{
  for(let i=0;i<30;i++)assert.equal((await call(h,{method:'POST',token:idToken(),body:{id:'w'+i,world:world()}})).statusCode,200);
  assert.equal((await call(h,{method:'POST',token:idToken(),body:{id:'extra',world:world()}})).statusCode,409);
  assert.equal((await call(h,{method:'POST',token:idToken(),body:{id:'w3',world:world()}})).statusCode,200);});
+
+test('AI generate accepts an allowed teacher Google login and rejects others',async()=>{
+ const {createHandler:gen}=require('../api/generate.js');
+ const png='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+ const genEnv={...env,AI_ENABLED:'true',GEMINI_API_KEY:'fake',GEMINI_MODEL:'gemini-test'};
+ let calls=0;const h=gen({env:genEnv,fetchImpl:fakeGoogle().fetchImpl,generateImpl:async()=>{calls++;return {ok:1};}});
+ assert.equal((await call(h,{method:'POST',body:{image:png,approved:true}})).statusCode,401);
+ assert.equal((await call(h,{method:'POST',token:idToken({email:'student@example.com'}),body:{image:png,approved:true}})).statusCode,401);
+ assert.equal(calls,0);
+ assert.equal((await call(h,{method:'POST',token:idToken(),body:{image:png,approved:true}})).statusCode,200);
+ assert.equal(calls,1);});
